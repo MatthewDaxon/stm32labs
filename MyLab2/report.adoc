@@ -1,0 +1,435 @@
+= Лабораторная работа №2 
+
+== Исходное задание
+
+- Создать проект
+- Создать глобальную переменную типа `unsigned short` и присвоить ей значение 65535
+- В функции main прибавить к данной переменной 1 - описать что получилось и почему.
+- Поменять тип переменной на `signed short` и присвоить ей значение 32767
+- В функции `main` прибавить к данной переменной 1 - описать что получилось и почему.
+- Не меняя тип переменной взять адрес переменной (оператор `&`) - вывести адрес переменной в 
+терминал
+- Не меняя переменной, явно преобразовать адрес переменной к типу указатель на `short`, 
+используя `reinterpret_cast` и присвоить локальной переменной типа `short*`. 
+
+Должно получиться что-то типа этого:
+```
+short* ptr = reinterpret_cast<short*>(&myVar) ;
+```
+- Вывести в терминал значение указателя - пояснить что это за значение
+- Разыменовать указатель и вывести в терминал значение лежащее по адресу, указанному в указателе.
+- Сделать явное преобразование этого указателя к типу указателя на `int` с помощью `(int*)`.
+- Разыменовать указатель из предыдущего пункта типа `int*`. Вывести значение лежащее по 
+адресу указателя типа `int*` из предыдущего пункта. Объяснить полученный результат
+- Заменить тип переменной с `unsigned short` на `short` и присвоить ей значение 65535
+- В функции `main` вывести значение переменной, посмотреть её значение и объяснить это.
+- Не меняя переменную в функции `main` сделать явное преобразование типа к `short`
+```
+std::cout << static_cast<short>(myVar) << std::endl ;
+```
+И оъяснить полученный результат.
+
+- Создать переменную типа `float` и присвоить ей значение `40'000'000'000F`;
+
+- Прибавить к этому значению `1.0f` -  вывести значение в окно Watch - объяснить полученный 
+результат
+
+- Заменить тип переменной `float` на `double`
+
+- Прибавить к этому значению `1.0f` - вывести в окно Watch - объяснить полученный результат. 
+
+== Результат выполнения 
+
+=== Создание проекта
+
+Создание проекта осуществляется следующим образом: 
+1. Зайдем во вкладку Project верхнего меню и нажмем на опцию Create New Project
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/CreateNewProject.png[]
+2. Создадим проект на С++ с файлом main.cpp
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/CreateMainFunc.png[]
+3. Добавим созданный проект в существующее пространство Workspace 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/AddExistingProject.png[]
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/AddExistingProjectToTheWkspce.png[]
+
+=== Работа с глабальными переменными
+
+Создадим глобальную переменную типа `unsigned short` и присвоим ей значение 65535. После чего 
+в функции main прибавим к данной переменной 1. 
+
+Для этого напишем в файле main.cpp следующий код: 
+```
+#include <iostream>
+
+short unsigned int myVar = 65535; 
+
+int main()
+{
+  myVar++; 
+  std::cout << "myVar = " << myVar << std::endl; 
+  
+  return 0;
+}
+```
+Если запустить эту программу, то можно обнаружить, что переменная myVar стала равна 0. 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/uintMyVar65535Plus1.png[]
+Так получилось из-за того, что произошло переполнение. 
+
+Затем поменяем тип переменной на `signed short` и присвоить ей значение 32767 и в функции 
+main прибавить к данной переменной 1. 
+
+Изменим код следующим образом: 
+```
+#include <iostream>
+
+signed short int myVar = 32767; 
+
+int main()
+{
+  myVar++; 
+  std::cout << "myVar = " << myVar << std::endl; 
+  
+  return 0;
+}
+```
+
+Запустим программу и увидим, что значение переменной myVarстало равно -32768. 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/signed%20short%20int.png[]
+
+Полученное значение объясняется диапазоном, в котором определены значения (об этом есть статья 
+в https://en.wikipedia.org/wiki/C_data_types[Википедии]): типу `signed short int`, как и 
+`unsigned short int` в памяти компьютера выделено определенное количество памяти (2 байта, или 
+16 бит). Беззнаковые числа имеют неотрицаетельные значения в диапазоне от 0 до 65535 
+включительно, в то время как знаковые числа одну половину памяти занимают отрицательные числа, 
+а вторую - положительные числа (согласно Википедии этот диапазон от -32767 до +32767). 
+
+Однако в данном примере получилось значение -32768. Я не могу сказать, почему так получилось. 
+
+=== Работа с указателями на переменную 
+
+Не меняя тип переменной, возьмем адрес переменной (оператор `&`) и выведем этот адрес в терминал. 
+
+Для этого изменим код следующим образом: 
+```
+#include <iostream>
+
+using tMyVar = short unsigned int; 
+tMyVar myVar = 32767; 
+
+int main()
+{
+  tMyVar* ptrMyVar = &myVar; 
+  
+  myVar++; 
+  
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  
+  return 0;
+}
+```
+
+Результат представлен на рисунке ниже: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/AddressOfShortUnsignedVariable.png[]
+
+Кроме того, адрес переменной `myVar` можно получить с помощью конструкции `&myVar`, а также 
+можно получить значение переменной `myVar`, на которое ссылается указатель `ptrMyVar`, с помощью
+конструкции вида `*ptrMyVar`. 
+
+Изменим код в соответсвии с этими положениями: 
+```
+#include <iostream>
+
+using tMyVar = short unsigned int;
+tMyVar myVar = 32767;
+
+int main()
+{
+  tMyVar* ptrMyVar = &myVar;
+
+  myVar++;
+  
+  std::cout << "Addr = " << &myVar << std::endl;
+  std::cout << "myVar = " << myVar << std::endl;
+  std::cout << "Addr = " << ptrMyVar << std::endl;
+  std::cout << "*ptrMyVar = " << *ptrMyVar << std::endl;
+
+  return 0;
+}
+```
+
+Результат, представлен на рисунке ниже: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/AddressOfShortUnsignedVariables.png[]
+
+Не меняя переменной, явно преобразуем адрес переменной к типу указатель на `short`, 
+используя `reinterpret_cast`, и присвоим локальной переменной типа `short*`.
+
+Для этого изменим код программы следующим образом:
+```
+#include <iostream>
+
+using tMyVar = short unsigned int; 
+tMyVar myVar = 32767; 
+
+int main()
+{
+  short* ptrMyVar = reinterpret_cast<short*>(&myVar);
+  
+  myVar++; 
+  
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  
+return 0;
+}
+```
+
+Выведем в терминал значение указателя:
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/reinterpret_cast.png[]
+
+=== Разыменование указателя
+
+Разыменование указателя представляет выражение в виде `*имя_указателя`. 
+Эта операция позволяет получить объект по адресу, который хранится в указателе.
+
+Изменим код следующим образом: 
+```
+#include <iostream>
+
+using tMyVar = short unsigned int; 
+tMyVar myVar = 32767; 
+
+int main()
+{
+  tMyVar *ptrMyVar = &myVar;
+  
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  
+  *ptrMyVar = 25;
+  std::cout << "Derefencing operator" << std::endl; 
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  
+  return 0;
+}
+```
+Через выражение `*ptrMyVar` мы можем получить значение по адресу, который хранится 
+в указателе `ptrMyVar`, 
+а через выражение типа `*ptrMyVar = значение` вложить по этому адресу новое значение.
+
+И так как в данном случае указатель `ptrMyVar` указывает на переменную `myVar`, 
+то при изменении значения по адресу, на который указывает указатель, 
+также изменится и значение переменной `myVar`.
+
+В результате получим следующие значения в терминале: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/DereferencingOperator.png[]
+
+=== Приведение типов 
+
+Изменим код следующим образом: 
+```
+#include <iostream>
+
+using tMyVar = short unsigned int; 
+tMyVar myVar = 32767; 
+
+int main()
+{
+  tMyVar *ptrMyVar = &myVar;
+  
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  
+  *ptrMyVar = 25;
+  int *intPtrMyVar = (int*)ptrMyVar;
+  
+  std::cout << "Derefencing operator" << std::endl; 
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  std::cout << "intPtrMyVar = " << intPtrMyVar << std::endl;
+  
+  return 0;
+}
+```
+Получим следующий результат:
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/TypeConversion.png[]
+
+Для того, чтобы разыменовать указатель, напишем следующий код: 
+```
+#include <iostream>
+
+using tMyVar = short unsigned int; 
+tMyVar myVar = 32767; 
+
+int main()
+{
+  tMyVar *ptrMyVar = &myVar;
+  
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  
+  *ptrMyVar = 25;
+  std::cout << "Dereferncing" << std::endl; 
+  std::cout << "myVar = " << myVar << std::endl;
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  
+  int *intPtrMyVar = (int*)ptrMyVar;
+  *intPtrMyVar = 56;
+  
+  std::cout << "Type conversion and dereferncing" << std::endl; 
+  std::cout << "myVar = " << myVar << std::endl;
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl; 
+  std::cout << "intPtrMyVar = " << intPtrMyVar << std::endl;
+  
+  return 0;
+}
+```
+
+Полученный результат: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/TypeConversionAndDereferencing.png[]
+
+Кроме того, можно разыменовать указатель и прибавить единицу к числу, на которое ссылается 
+этот указатель. 
+```
+#include <iostream>
+
+using tMyVar = short unsigned int;
+tMyVar myVar = 32767;
+
+int main()
+{
+  tMyVar *ptrMyVar = &myVar;
+
+  std::cout << "myVar = " << myVar << std::endl;
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl;
+
+  *ptrMyVar = *ptrMyVar + 1U;
+  int *intPtrMyVar = (int*)ptrMyVar;
+
+  std::cout << "Derefencing operator" << std::endl;
+  std::cout << "myVar = " << myVar << std::endl;
+  std::cout << "ptrMyVar = " << ptrMyVar << std::endl;
+  std::cout << "Value = "<< *ptrMyVar << std::endl;
+  std::cout << "intPtrMyVar = " << intPtrMyVar << std::endl;
+  std::cout << "Value = "<< *intPtrMyVar << std::endl;
+
+  return 0;
+}
+```
+
+В результате получим следующие значения в терминале: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/TypeConversionAndDereferencingPlusOne.png[]
+
+Полученный результат можно прокомментировать так: 
+
+1) С помощью конструкции 
+```
+*ptrMyVar = *ptrMyVar + 1U;
+```
+мы разыменовали указатель и прибавили 
+единицу к числу, на которое ссылается этот указатель,
+
+2) С помощью 
+```
+int *intPtrMyVar = (int*)ptrMyVar;
+``` 
+мы привели переменную `ptrMyVar` к 
+целочисленному типу, 
+
+3) Далее при выводе данных в терминал мы последовательно выводим: 
+- значение переменной `myVar`, 
+- значение ее указателя `ptrMyVar` (адрес переменной `myVar`), 
+- значение, хранящееся в указателе `ptrMyVar` (с помощью разыменования `*ptrMyVar`), 
+- значение указателя `intPtrMyVar` (это также адрес переменной `myVar`),
+- значение, хранящееся в указателе `intPtrMyVar` (с помощью разыменования `*intPtrMyVar`)
+
+4) Поскольку указатели `ptrMyVar` и `intPtrMyVar` ссылаются на одну и ту же переменную `myVar`, 
+то значения при разыменовании этих указателей равны. 
+
+=== Явное преобразование типа 
+
+Изменим код следующим образом, для того, чтобы выполнить явное преобразование типа: 
+```
+#include <iostream>
+
+using tMyVar = short int; 
+tMyVar myVar = 65535; 
+
+int main()
+{
+  std::cout << "myVar = " << myVar << std::endl; 
+  std::cout << static_cast<short>(myVar) << std::endl;
+  
+  return 0;
+}
+```
+
+Полученный результат изображен на рисунке ниже: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/static_cast.png[]
+
+=== Числа с плавающей точкой
+
+Создадим переменную типа `float` и присвоим ей значение `40'000'000'000.0F`: 
+```
+#include <iostream>
+
+float myVar = 40'000'000'000.0F; 
+
+int main()
+{
+  std::cout << "myVar = " << myVar << std::endl; 
+  
+  return 0;
+}
+```
+
+Значение, которое было получено в терминале представлено на рисунке ниже: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/FloatExponent.png[]
+
+Далее прибавим к этому значению `1.0f` и выведем значение в окно Watch: 
+```
+#include <iostream>
+
+float myVar = 40'000'000'000.0F;
+
+int main()
+{
+  myVar += 1.0f;
+
+  std::cout << "myVar = " << myVar << std::endl;
+
+  return 0;
+}
+```
+
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/FloatExponentPlusOne.png[]
+
+Как видно, результат не поменялся при увеличении переменной `myVar` на единицу, поскольку 
+переменная `myVar` представлена в экспоненциальной форме (на Википедии есть статьи, одна из 
+которых посвящена https://en.wikipedia.org/wiki/Computer_number_format[форматам представления чисел в компьютере], 
+а вторая - https://en.wikipedia.org/wiki/Single-precision_floating-point_format[составным частям чисел с плавающей точкой (знак, степень и мантисса)]). 
+
+Мантисса хранит в себе значимую часть представления числа (в нашем случае число 4), а степень - 
+степень, в которую необходимо возвести мантиссу, чтобы получить необходимое чиссло. 
+
+Увеличение переменной `myVar` на единицу, судя по всему, не является существенным, поскольку 
+мантисса числа скорее всего не поменялась. 
+
+Если изменить тип переменной `myVar` с `float` на `double`, то получим следующий код: 
+```
+#include <iostream>
+
+double myVar = 40'000'000'000.0F; 
+
+int main()
+{
+  myVar += 1.0f;
+  
+  std::cout << "myVar = " << myVar << std::endl; 
+  
+  return 0;
+}
+
+```
+Это даст результат, как показано на рисунке ниже: 
+image:https://github.com/alexeysp11/stm32Labs/blob/master/MyLab2/img/FloatExponentToDouble.png[]
