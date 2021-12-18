@@ -1,0 +1,107 @@
+:figure-caption: Рисунок
+:toc: Оглавление
+
+= Отчет по лабораторной работе №2
+Макаров КЭ-413 +
+
+==  Задание  +
+
+1. Сделать бегущий огонь из 4 светодиодов, подключенных к портам C.5, C.8, C9, A.5
+
+2. Заготовка лежит с настройками портов светодиодов лежит в https://github.com/lamer0k/stm32Labs/tree/master/Lab1
+
+3. Сделать отчет как обычно
+
+== Решение задачи
+
+Для начала рассмотрим схему самой платы и проанализиурем, где расположены нужные нам порты.
+
+.Схема платы XNucleo-F411RE.
+[#img-sunset]
+[link=https://github.com/MakarovSasha/Labs/blob/main/Lab3]
+image::XNUCLEO-F411RE_4.jpg[Sunset, 600, 441]
+
+Из схемы видно, что нам понадобятся PC_5, PC_9, PC_8, PC_5.
+
+=== Код программы
+
+Подключим библиотеки для портов С и А;
+
+[source, cpp, linenums]
+
+----
+#include "gpioaregisters.hpp" // для GPIOC
+#include "gpiocregisters.hpp" // для GPIOC
+#include "rccregisters.hpp" // для RCC
+----
+
+[source, cpp, linenums]
+
+----
+std :: uint32_t SystemCoreClock = 16'000'000U;
+----
+
+[source, cpp, linenums]
+
+----
+extern "C" {
+int __low_level_init(void)
+{
+//Switch on external 16 MHz oscillator
+RCC::CR::HSION::On::Set();
+while (RCC::CR::HSIRDY::NotReady::IsSet())
+{
+  }
+  //Switch system clock on external oscillator
+  RCC::CFGR::SW::Hsi::Set();
+  while (!RCC::CFGR::SWS::Hsi::IsSet())
+  {
+  }
+  RCC::APB2ENR::SYSCFGEN::Enable::Set();
+  return 1;
+}
+}
+void delay(int cycles)
+{
+ for(int i=0; i < cycles; ++i)
+ {
+   asm volatile ("");
+ }
+}
+int main()
+{
+    for(;;)
+      {
+        RCC::AHB1ENR::GPIOAEN::Enable::Set() ;
+        GPIOA::MODER::MODER5::Output::Set() ;
+        RCC::AHB1ENR::GPIOCEN::Enable::Set() ;
+        GPIOC::MODER::MODER5::Output::Set() ;
+        GPIOC::MODER::MODER8::Output::Set() ;
+        GPIOC::MODER::MODER9::Output::Set() ;
+        GPIOA::ODR::ODR5::High::Set() ;
+        delay(1000000);
+        GPIOA::ODR::ODR5::Low::Set() ;
+        delay(1000000);
+        GPIOC::ODR::ODR5::High::Set() ;
+        delay(1000000);
+        GPIOC::ODR::ODR5::Low::Set() ;
+        delay(1000000);
+        GPIOC::ODR::ODR8::High::Set() ;
+        delay(1000000);
+        GPIOC::ODR::ODR8::Low::Set() ;
+        delay(1000000);
+        GPIOC::ODR::ODR9::High::Set() ;
+        delay(1000000);
+        GPIOC::ODR::ODR9::Low::Set() ;
+        delay(1000000);
+      }
+    return 1;
+}
+----
+
+=== Результат пргограммы
+
+.Результат программы
+[#img-sunset]
+[link=https://github.com/MakarovSasha/Labs/blob/main/Lab3]
+image::2_5404873719589900622.gif[Sunset, 388, 690]

@@ -1,0 +1,153 @@
+﻿:figure-caption: Рисунок
+:toc: Оглавление
+
+
+= Отчет по лабораторной работе №4
+
+Макаров КЭ-413 +
+
+== Задание +
+
+1. Написать программу, которая моргает всеми 4 светодиодами, но без использования магии с GPIOA::ODR::ODR5::High::Set() и тому подобное; а только прямой доступ к памяти по адресам, только хардкор.
+
+.. Все загораются, задержка, все гаснут
+.. Частота 1Гц
+.. 4 светодиода на A.5, C.5, C.8, C.9
+
+2. А также в приложении к отчету нужно описать, как работает операция ИСКЛЮЧАЮЩЕЕ ИЛИ
+
+3. Как поменять значения переменных местами, без привлечения третьей переменной.
+
+== Решение задачи
+
+Для написания будем использовать операцию исключающее или.
+
+=== Код программы
+
+Подключим библиотеки для портов С и А;
+
+[source, cpp, linenums]
+
+----
+#include "gpioaregisters.hpp" // для GPIOC
+#include "gpiocregisters.hpp" // для GPIOC
+#include "rccregisters.hpp" // для RCC
+----
+
+[source, cpp, linenums]
+
+----
+std :: uint32_t SystemCoreClock = 16'000'000U;
+----
+
+[source, cpp, linenums]
+
+----
+extern "C"
+    {
+        int __low_level_init(void)
+        {
+            //Switch on external 16 MHz oscillator
+            RCC::CR::HSION::On::Set();
+            while (RCC::CR::HSIRDY::NotReady::IsSet())
+                {
+
+                }
+            //Switch system clock on external oscillator
+            RCC::CFGR::SW::Hsi::Set();
+            while (!RCC::CFGR::SWS::Hsi::IsSet())
+                {
+
+                }
+
+            RCC::APB2ENR::SYSCFGEN::Enable::Set();
+
+    return 1;
+        }
+    }
+    int delay(int cycles)
+        {
+            for(int i=0; i < cycles; ++i)
+                {
+                    asm volatile ("");
+                }
+        }
+
+    int main()
+        {
+            RCC::AHB1ENR::GPIOAEN::Enable::Set();
+            GPIOA::MODER::MODER5::Output::Set();
+            RCC::AHB1ENR::GPIOCEN::Enable::Set();
+            GPIOC::MODER::MODER5::Output::Set();
+            GPIOC::MODER::MODER8::Output::Set();
+            GPIOC::MODER::MODER9::Output::Set();
+
+            for(;;)
+                {
+
+
+                    uint32_t* ptrPaOdr = reinterpret_cast<uint32_t*>(0x40020014);
+                    uint32_t* ptrPcOdr = reinterpret_cast<uint32_t*>(0x40020814);
+                    *ptrPaOdr ^= static_cast<uint32_t>(1 « 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 « 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 « 8);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 « 9);
+                    delay(1000000);
+                    *ptrPaOdr ^= static_cast<uint32_t>(1 « 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 « 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 « 8);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 « 9);
+                    delay(1000000);
+
+                }
+            return 1;
+        }
+----
+
+=== Результат пргограммы
+
+.Результат программы
+[#img-sunset]
+[link=https://github.com/MakarovSasha/Labs/blob/main/lab%204]
+image::Result.gif[Sunset, 388, 690]
+
+= *Исключающее или*
+
+Оператор побитового исключающего или ( ^ ) сравнивает каждый бит своего первого операнда ссоответствующим битом второго операнда. Если бит одного из операндов равен 0, а бит второго операнда равен 1, соответствующий бит результата устанавливается в значение 1. в противном случае — нулю.
+
+Оба операнда оператора должны иметь целочисленные типы. Обычные арифметические преобразования, охваченные стандартными преобразованиями, применяются к операндам.
+
+= *Как поменять значения переменных местами, без привлечения третьей переменной*
+
+. Первый способ заключается просто в арифметике, т.е.
+
+
+[source, c]
+a=3;
+b=4;
+a=a+b;//берем их сумму =7
+b=a-b;// 7-4=3, т.е. b стало равно a
+a=a-b;// 7-3=4, т.е. a стало равно b
+
+[start=2]
+. Второй способ основывается на операторе XOR, другое написание ^, а то есть исключающее или
+
+Допустим, у нас есть переменные X и Y с начальными значениями a и b соответственно. Выполним следующие назначения (значения переменных, результаты которых отображаются в виде комментариев):
+
+[source, c]
+(start)      # X == a; Y == b
+X = X XOR Y  # X == a XOR b;  Y == b
+Y = X XOR Y  # X == a XOR b;  Y == b XOR (a XOR b)
+X = X XOR Y  # X == (a XOR b) XOR b XOR (a XOR b);  Y == b XOR (a XOR b)
+
+Поскольку XOR ассоциативен, мы можем перегруппировать полученные уравнения следующим образом:
+
+[source, c]
+X == (a XOR a) XOR (b XOR b) XOR b
+Y == (b XOR b) XOR a
+
+Поскольку x XOR x == 0 и x XOR 0 == x , мы можем просто удалить все эти пары переменных XOR'ed с самими собой, и то, что осталось,:
+
+[source, c]
+X == b
+Y == a

@@ -1,0 +1,140 @@
+:figure-caption: Рисунок
+
+= Отчет по лабораторной работе №5
+:toc:
+:toc-title: Оглавление:
+
+Макаров КЭ-413 +
+
+= *Задание* +
+
+. Сделать мигание светодиодов
+. Тактирование системной частоты произвести с модуля *PLL*, так, чтобы системная частота была 30 МГц.
+
+= *Подключение системы PLL*
+
+Код будет выглядеть так:
+
+[source, c]
+
+----
+#include "gpioaregisters.hpp" //for GPIOC
+#include "gpiocregisters.hpp" //for GPIOC
+#include "rccregisters.hpp"   //for RCC
+#include <iostream>
+std::uint32_t SystemCoreClock = 16'000'000U;
+
+extern "C"
+    {
+        int __low_level_init(void)
+        {
+            while (RCC::CR::HSIRDY::NotReady::IsSet())
+            RCC::PLLCFGR::PLLN0::Set(75);
+            RCC::PLLCFGR::PLLM0::Set(20);
+            RCC::CR::PLLON::On::Set();
+            {
+
+           }
+
+           while (RCC::CR::PLLRDY::NotReady::IsSet())
+           RCC::CFGR::SW::Pll::Set();
+           {
+
+           }
+
+           while (!RCC::CFGR::SWS::Pll::IsSet())
+           {
+
+           }
+        }
+    }
+    void delay(int cycles)
+        {
+            for(int i=0; i < cycles; ++i)
+                {
+                    asm volatile ("");
+                }
+        }
+
+    int main()
+        {
+            RCC::AHB1ENR::GPIOAEN::Enable::Set();
+            GPIOA::MODER::MODER5::Output::Set();
+            RCC::AHB1ENR::GPIOCEN::Enable::Set();
+            GPIOC::MODER::MODER5::Output::Set();
+            GPIOC::MODER::MODER8::Output::Set();
+            GPIOC::MODER::MODER9::Output::Set();
+
+            for(;;)
+                {
+
+
+                    uint32_t* ptrPaOdr = reinterpret_cast<uint32_t*>(0x40020014);
+                    uint32_t* ptrPcOdr = reinterpret_cast<uint32_t*>(0x40020814);
+                    *ptrPaOdr ^= static_cast<uint32_t>(1 << 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 << 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 << 8);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 << 9);
+                    delay(1000000);
+                    *ptrPaOdr ^= static_cast<uint32_t>(1 << 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 << 5);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 << 8);
+                    *ptrPcOdr ^= static_cast<uint32_t>(1 << 9);
+                    delay(1000000);
+               }
+         }
+----
+Согласно *Reference manual for STM32F411xC/E*, частота *PLL* на выводе общего назначения задается следующим видом:
+
+ f = f(PLL clock input) × (PLLN / PLLM) /PLLP;
+
+*PLLN*: коэффициент умножения основной системы (*PLL*), значение которого находится в диапазоне:
+ 50<= PLLN <= 432;
+
+*PLLM*: Коэффициент деления для тактовой частоты основного входа (*PLL*), значение которого находится в диапазоне:
+ 2 <= PLLM <= 63;
+
+*PLLP*: коэффициент деления основной системы (*PLL*):
+PLLP={2,4,6,8}.
+
+По умолчанию на вход *PLL* поступает сигнал с *HSI*, *fHSI* = 16 МГц. *PLLP* по умолчанию равеняется 2, тогда требуемую частоту *fPLL* = 30 МГц обеспечит выбор *PLLN* = 75, *PLLM* = 20, так как
+
+16 * (75 / 20) / 2=30
+
+При отладке были внесены изменения в файлы *rccregisters.hpp* и *rccfieldvalues.hpp*.
+
+В первом файле:
+
+[source, c]
+
+----
+struct PLLCFGR : public RegisterBase<0x40023804, 32, ReadWriteMode>
+{
+ //using FieldValues = RCC_PLLCFGR_PLLM_Values<RCC::PLLCFGR, 0, 5, NoAccess, NoAccess> ; - было
+ using PLLM0 = RCC_PLLCFGR_PLLM_Values<RCC::PLLCFGR, 0, 5, ReadWriteMode, RCCPLLCFGRBase> ;// - стало
+} ;
+----
+
+Во втором файле:
+
+[source, c]
+
+----
+template <typename Reg, size_t offset, size_t size, typename AccessMode, typename BaseType>
+struct RCC_CR_PLLRDY_Values: public RegisterField<Reg, offset, size, AccessMode>
+{
+//using Unclocked = FieldValue<RCC_CR_PLLRDY_Values, BaseType, 0U> ;
+//using Locked = FieldValue<RCC_CR_PLLRDY_Values, BaseType, 1U> ; - было
+using NotReady = FieldValue<RCC_CR_PLLRDY_Values, BaseType, 0U> ;
+using Ready = FieldValue<RCC_CR_PLLRDY_Values, BaseType, 1U> ; // - стало
+} ;
+----
+
+При загрузке программы в микроконтроллер наблюдается мигание светодиода с более высокой частотой.
+
+= *Результат программы*
+
+.Результат программы
+[#img-sunset]
+[link=https://github.com/MakarovSasha/Labs/blob/main/lab5]
+image::Fire.gif[Sunset, 388, 690]
